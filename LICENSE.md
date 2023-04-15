@@ -1,0 +1,1 @@
+This `README.md` file provides an overview of the project, including its purpose, structure, setup, usage, and customization options. You can include this file in your repository to help users understand and use your project.
