@@ -154,6 +154,7 @@ def train(game: GameEnvironment,
             # print first position with reward in the replay buffer
             #for i in range(80):
             for i in range(len(replay_buffer)):
+                break
                 if replay_buffer.buffer[i][2] != 0:
                     # Wypisz planszę
                     game_board = replay_buffer.buffer[i][0].cpu().numpy().squeeze()
