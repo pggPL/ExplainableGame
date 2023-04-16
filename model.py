@@ -47,4 +47,4 @@ def board_to_input(board: List[List[str]], player_symbols: Tuple[str, str]) -> t
                 input_tensor[1, i, j] = 1
             else:
                 input_tensor[2, i, j] = 1
-    return input_tensor.unsqueeze(0)
+    return input_tensor
