@@ -80,9 +80,9 @@ def train(
                     )
                     for row, col in game.get_valid_moves(next_state)
                 ]
-                next_q = max(next_q_values)
+                next_q = max(next_q_values).to(device)
             else:
-                next_q = torch.Tensor([[0]])
+                next_q = torch.Tensor([[0]]).to(device)
 
             # Compute the target value and the loss
             target = reward + gamma * next_q
