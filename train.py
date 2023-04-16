@@ -7,6 +7,7 @@ from model import ValueFunction, board_to_input
 from env import GameEnvironment, GameState, winning_patterns
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Using device:", device)
 
 # Q value is value for player 0.
 
