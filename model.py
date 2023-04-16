@@ -23,7 +23,7 @@ class ValueFunction(nn.Module):
         x = x.view(-1, 64 * 10 * 10)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = torch.tanh(self.fc3(x))
+        x = self.fc3(x)
         return x
 
 

@@ -94,8 +94,8 @@ class GameEnvironment:
             bool: True if the state is terminal, False otherwise.
         """
         # Check if either player has won
-        for state.player in range(2):
-            if self.has_player_won(state, state.current_player):
+        for player in range(2):
+            if self.has_player_won(state, player):
                 return True
     
         # Check if the board is full (no more valid moves)

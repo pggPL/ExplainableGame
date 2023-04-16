@@ -63,17 +63,12 @@ def epsilon_greedy_policy(
         else:
             return valid_moves[max_index], max_index
 
-# Get next state after opponent's move using the target network
-def get_next_state_with_opponent_move(game: GameEnvironment, target_value_function: ValueFunction, state: GameState, player: int) -> GameState:
-    action, _ = epsilon_greedy_policy(game, target_value_function, state, 0, player)
-    return game.make_move(state, *action)
-
 def sample_batch(
         replay_buffer: ReplayBuffer,
         game: GameEnvironment,
         value_function: ValueFunction,
         target_value_function: ValueFunction,
-        batch_size: int = 64,
+        batch_size: int = 1024,
         gamma: float = 0.99) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     experiences = replay_buffer.sample(batch_size)
     states, actions_indices, rewards, next_states, dones = zip(*experiences)
@@ -101,7 +96,7 @@ def train(game: GameEnvironment,
           epsilon_start: float = 1.0,
           epsilon_end: float = 0.1,
           epsilon_decay: float = 0.999,
-          target_update_frequency: int = 100) -> None:
+          target_update_frequency: int = 10) -> None:
     for episode in range(num_episodes):
         # Initialize the state for the current episode
         state = game.initial_state()
@@ -118,17 +113,16 @@ def train(game: GameEnvironment,
             # Compute the reward for the current action
             reward = 0
             if game.has_player_won(next_state, state.current_player):
-                reward = 1
+                if state.current_player == 1:
+                    reward = -1
+                else:
+                    reward = 1
                 
             # Add the experience to the replay buffer
             state_tensor = board_to_input(state.board, game.player_symbols).unsqueeze(0).to(device)
             next_state_tensor = board_to_input(next_state.board, game.player_symbols).unsqueeze(0).to(device)
             done = game.is_terminal(next_state)
             replay_buffer.push(state_tensor, action_index, reward, next_state_tensor, done)
-            
-            # Get the next state after opponent's move using the target network
-            next_state = get_next_state_with_opponent_move(game, target_value_function, next_state,
-                                                           1 - next_state.current_player)
             
             # Update the state for the next iteration
             state = next_state
@@ -153,8 +147,38 @@ def train(game: GameEnvironment,
             target_value_function.load_state_dict(value_function.state_dict())
         
         # Print the progress after every 100 episodes
-        if (episode + 1) % 1 == 0:
+        if (episode + 1) % 5 == 0:
             print(f"Episode {episode + 1}/{num_episodes} completed. Loss: {loss.item()}.")
+            
+            # print first position with reward in the replay buffer
+            #for i in range(80):
+            for i in range(len(replay_buffer)):
+                if replay_buffer.buffer[i][2] != 0:
+                    # Wypisz planszę
+                    game_board = replay_buffer.buffer[i][0].cpu().numpy().squeeze()
+                    board = game_board[0] - game_board[1]
+                    for row in board:
+                        print("|", end="")
+                        for cell in row:
+                            if cell == 1:
+                                print("X|", end="")
+                            elif cell == -1:
+                                print("O|", end="")
+                            else:
+                                print(" |", end="")
+                        print("\n")
+                    # print action
+                    print("Action: ", replay_buffer.buffer[i][1])
+                    print("Reward: ", replay_buffer.buffer[i][2])
+
+                    next_q_value = target_value_function(replay_buffer.buffer[i][3]).max(1, keepdim=True)[0]
+                    
+                    target_q_value = replay_buffer.buffer[i][2] + (1 - replay_buffer.buffer[i][4]) * gamma * next_q_value
+                    print("Target Q-value: ",
+                          target_q_value.item())
+                    print("Current Q-value: ",
+                          value_function(replay_buffer.buffer[i][0]).max(1, keepdim=True)[0].item())
+                    print("Done: ", replay_buffer.buffer[i][4])
 
 
 # Initialize the game environment, value function, target_value_function, and optimizer
